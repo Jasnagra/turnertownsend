@@ -1,29 +1,55 @@
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import {MockSelector, MockStore, provideMockStore} from '@ngrx/store/testing';
+import { AppState } from './state/reducers/playlistApi.reducer';
+import { PlaylistApiActions } from './state/actions/playlist.actions';
+import { provideAnimations } from '@angular/platform-browser/animations';
+import { of } from 'rxjs';
+import { selectShowError } from './state/selectors/playlist.selector';
 
 describe('AppComponent', () => {
+  let component: AppComponent;
+  let fixture: ComponentFixture<AppComponent>;
+  let store: MockStore;
+  const initialState: AppState = { playlist: [], loading: false, showError: true };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AppComponent],
+      providers: [
+        provideMockStore({ 
+          initialState,
+          selectors: [{
+              selector: selectShowError,
+              value: true
+          }],
+        }),
+        provideAnimations()
+      ]
     }).compileComponents();
+
+    fixture = TestBed.createComponent(AppComponent);
+    component = fixture.componentInstance;
+    store = TestBed.inject(MockStore);
   });
 
   it('should create the app', () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(component).toBeTruthy();
   });
 
-  it(`should have the 'turner-townsend-assessment' title`, () => {
-    const fixture = TestBed.createComponent(AppComponent);
-    const app = fixture.componentInstance;
-    expect(app.title).toEqual('turner-townsend-assessment');
-  });
-
-  it('should render title', () => {
-    const fixture = TestBed.createComponent(AppComponent);
+  it('should dispatch on initialization', () => {
+    const dispatchSpy = spyOn(store, 'dispatch').and.callThrough();
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, turner-townsend-assessment');
+  
+    expect(dispatchSpy).toHaveBeenCalledWith(PlaylistApiActions.getPlayList({ loading: true }));
+  });
+
+  it('should dispatch on initialization', () => {
+    const spy =  spyOn(component['_snackBar'], 'open');
+    spyOn(store, 'dispatch');
+    fixture.detectChanges();
+  
+    expect(spy).toHaveBeenCalledWith('There was an error', 'X', Object({ duration: 30000 }));
   });
 });
+
